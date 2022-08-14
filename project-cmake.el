@@ -880,11 +880,13 @@ on the Windows platform."
 (define-key project-prefix-map "t" 'project-cmake-test)
 (define-key project-prefix-map "m" 'project-cmake-build)
 (define-key project-prefix-map "C" 'project-cmake-configure)
+(define-key project-prefix-map "R" 'project-cmake-run-target)
 (define-key project-prefix-map "s" 'project-cmake-shell)
 (define-key project-prefix-map "SK" 'project-cmake-select-kit)
 (define-key project-prefix-map "SE" 'project-cmake-edit-settings)
 (define-key project-prefix-map "SS" 'project-cmake-save-settings)
 (define-key project-prefix-map "SL" 'project-cmake-load-settings)
 (define-key project-prefix-map "U" 'project-cmake-debug)
+(define-key project-prefix-map "i" 'project-cmake-install)
 
 (provide 'project-cmake)
