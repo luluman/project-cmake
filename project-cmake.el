@@ -158,6 +158,14 @@ at the root of the project's directory."
   :type '(or null string)
   :type (lambda (x) (or (null x) (stringp x))))
 
+
+(defcustom project-cmake-source-directory-name nil
+  "The path to the top level of the current CMake source tree.  If NIL, it
+is derived from the kit's name.  Otherwise it is a path expanded
+at the root of the project's directory."
+  :type '(or null string)
+  :type (lambda (x) (or (null x) (stringp x))))
+
 (defun project-cmake-guess-environment (&optional program &rest args)
   "Guess the environment variables from the current shell"
   (let ((program (or program shell-file-name))
@@ -180,7 +188,9 @@ at the root of the project's directory."
 
 (defun project-cmake-source-directory ()
   "Return the full path to the project's source (or root) directory"
-  (expand-file-name (project-root (project-current t))))
+  (expand-file-name (or project-cmake-source-directory-name
+                        "")
+                    (project-root (project-current t))))
 
 
 ;;;
@@ -514,10 +524,11 @@ mingw64, mingw32 or ucrt64."
 
 (defun project-cmake-kit-name ()
   "Return the symbol for the selected kit."
-  (or (project-local-value (project-current t)
+  (or project-cmake-kit
+      (project-local-value (project-current t)
 						   'project-cmake-kit)
-	  (call-interactively #'project-cmake-select-kit)
-	  (error "No build kit selected.")))
+      (call-interactively #'project-cmake-select-kit)
+      (error "No build kit selected.")))
 
 (defun project-cmake-kit (&optional kit)
   "Return the definition (name with property list) for the
@@ -670,7 +681,10 @@ the CMake generator."
 (defun project-cmake-ensure-configured ()
   "Ensure that the project has been configured before building it."
   (let ((build (project-cmake-build-directory)))
-	(or (file-exists-p build)
+	(or (and (file-exists-p build)
+             (condition-case nil
+                 (project-cmake-api-project-database)
+               (error (project-cmake-api-query-complete))))
 		(when (y-or-n-p (format "Project has not been configured.  Do you want to configure it first?"))
 		  (project-cmake-configure)
 		  t))))
