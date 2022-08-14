@@ -111,43 +111,6 @@ not exists, it creates a new record that is added to the cache."
   "Return the existing record of a project, if it exists, or NIL if it doesn't."
   (assoc project project-local-cache))
 
-(defun project-local-read-definitions (project)
-  "Read project-local definitions from the .project.el file, and return
-a new record with those definitions -- or an empty one if such file does
-not exist."
-  (let* ((file-name (project-local-file-name project))
-		 (record (project-local-new-record project)))
-	(when (file-exists-p file-name)
-	  (condition-case condition
-		  (with-temp-buffer
-			(insert-file file-name)
-			(let ((buf (current-buffer))
-				  sexp)
-			  (while (setq sexp (read buf))
-				(cl-destructuring-bind (statement variable &optional value)
-					sexp
-				  (when (eq statement 'defvar)
-					(project-local-record-set record variable (eval value)))))
-			  output))
-		(end-of-file)
-		(error (message "Ill-formed project-local file %s.\nCondition: %S"
-						file-name condition))))
-	record))
-
-(defun project-local-write-definitions (project record)
-  "Write all variables from a project into its project-local file"
-  (with-temp-buffer
-	(insert ";;; Project-local definitions.\n")
-	(insert ";;; Saved on " (format-time-string "%Y-%m-%dT%H:%M:%S") "\n")
-	(project-local-record-map-values
-	 record
-	 (lambda (variable value)
-	   (unless (keywordp variable)
-		 (prin1 `(defvar ,variable ',value) (current-buffer))
-		 (insert "\n"))))
-	(write-region (point-min) (point-max)
-				  (project-local-file-name project))))
-
 (defun project-local-value (project variable)
   "Return the project-local value assigned to VARIABLE or the globally
 bound value for that symbol."
@@ -175,31 +138,12 @@ project-local cache, that will have to be saved later on."
 	  (error "The value does not match the expected type for %S"
 			 variable))))
 
-(defun project-local-save-project (project record)
-  (when (and (project-local-record-value record :changed)
-			 (or (null project-local-confirm-save)
-				 (y-or-n-p (format "Save project local file %s?"
-								   (project-local-file-name project)))))
-	(project-local-write-definitions project record)))
-
-(defun project-local-save-records (&optional all)
-  "Save all records that have been modified. If no argument is
-provided, it only saves the variables from the current project.
-Otherwise it saves variables from all projects."
-  (if all
-	  (project-local-map-records 'project-local-save-project)
-	(let* ((project (project-current t))
-		   (record (project-local-record project)))
-	  (project-local-save-project project record))))
-
 (defun project-local-load-record (project)
-  "Load a project's record from a .project.el, or return a new record for it."
-  (project-local-set-record project (project-local-read-definitions project)))
+  "Return a new record for it."
+  (project-local-set-record project (project-local-new-record project)))
 
 (defun project-local-clear (&optional project)
   (interactive)
   (project-local-remove-record (or project (project-current t))))
-
-(add-to-list 'kill-emacs-hook '(lambda () (project-local-save-records 'all)))
 
 (provide 'project-local)
