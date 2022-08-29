@@ -560,8 +560,8 @@ selected kit, or NIL if it does not exist."
 			 (project-cmake-kit)))))
 
 (defun project-cmake-kit-wrap (command-list)
-  (combine-and-quote-strings (append (project-cmake-kit-value :command-prefix)
-									 command-list)))
+  (string-join (append (project-cmake-kit-value :command-prefix)
+									 command-list) " "))
 
 (defun project-cmake-kit-compile (command-list &optional interactive-p)
   (let* ((compile-command (project-cmake-kit-wrap command-list))
